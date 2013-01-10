@@ -34,7 +34,7 @@ namespace Nancy.ViewEngines.Spark
             var searchPath = ConvertPath(path);
 
             var viewLocationResult = this.viewEngineStartupContext.ViewLocationResults
-                .FirstOrDefault(v => CompareViewPaths(GetSafeViewPath(v), searchPath));
+                .FirstOrDefault(v => CompareViewPaths(v.GetSafeViewPath(), searchPath));
 
             if (viewLocationResult == null)
             {
@@ -71,7 +71,7 @@ namespace Nancy.ViewEngines.Spark
             var searchPath = 
                 ConvertPath(path);
 
-            return this.viewEngineStartupContext.ViewLocationResults.Any(v => CompareViewPaths(GetSafeViewPath(v), searchPath));
+            return this.viewEngineStartupContext.ViewLocationResults.Any(v => CompareViewPaths(v.GetSafeViewPath(), searchPath));
         }
 
         private static bool CompareViewPaths(string storedViewPath, string requestedViewPath)
@@ -82,13 +82,6 @@ namespace Nancy.ViewEngines.Spark
         private static string ConvertPath(string path)
         {
             return path.Replace(@"\", "/");
-        }
-
-        private static string GetSafeViewPath(ViewLocationResult result)
-        {
-            return string.IsNullOrEmpty(result.Location) ? 
-                string.Concat(result.Name, ".", result.Extension) : 
-                string.Concat(result.Location, "/", result.Name, ".", result.Extension);
         }
 
         public class NancyViewFile : IViewFile

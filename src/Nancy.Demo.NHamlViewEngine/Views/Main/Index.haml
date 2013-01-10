@@ -1,0 +1,21 @@
+﻿%h1 Hello World
+%p Demo of NHaml view engine.
+
+%h2 ViewBag based data binding
+%dl
+	%dt Nancy version
+	%dd #{NancyVersion}
+	%dt NHaml version
+	%dd #{NHamlVersion}
+	%dt Non-existing variable
+	%dd #{NonExisting}
+%h2 Model based data binding
+%table
+	%tr
+		%th Item Name
+		%th Item Sku	
+	- foreach (var item in Model)
+		%tr
+			%td
+				= item.Name
+			%td = item.Sku + " (Inline dynamic content)"
