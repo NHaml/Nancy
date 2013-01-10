@@ -48,6 +48,7 @@ namespace Nancy.ViewEngines.Spark
         {
             var searchPath = ConvertPath(path);
 
+<<<<<<< HEAD
             IViewFile fileResult;
             if (this.cachedFiles.TryGetValue(searchPath, out fileResult))
             {
@@ -61,6 +62,10 @@ namespace Nancy.ViewEngines.Spark
             {
                 result = this.currentlyLocatedViews
                              .FirstOrDefault(v => CompareViewPaths(GetSafeViewPath(v), searchPath));
+=======
+            var viewLocationResult = this.viewEngineStartupContext.ViewLocationResults
+                .FirstOrDefault(v => CompareViewPaths(v.GetSafeViewPath(), searchPath));
+>>>>>>> Added NHaml, tests and demo project
 
                 if (result == null && StaticConfiguration.Caching.EnableRuntimeViewDiscovery)
                 {
@@ -130,6 +135,7 @@ namespace Nancy.ViewEngines.Spark
             var searchPath =
                 ConvertPath(path);
 
+<<<<<<< HEAD
             this.padlock.EnterUpgradeableReadLock();
             try
             {
@@ -163,6 +169,9 @@ namespace Nancy.ViewEngines.Spark
             {
                 this.padlock.ExitUpgradeableReadLock();
             }
+=======
+            return this.viewEngineStartupContext.ViewLocationResults.Any(v => CompareViewPaths(v.GetSafeViewPath(), searchPath));
+>>>>>>> Added NHaml, tests and demo project
         }
 
         private static bool CompareViewPaths(string storedViewPath, string requestedViewPath)
@@ -175,6 +184,7 @@ namespace Nancy.ViewEngines.Spark
             return path.Replace(@"\", "/");
         }
 
+<<<<<<< HEAD
         private static string GetSafeViewPath(ViewLocationResult result)
         {
             return string.IsNullOrEmpty(result.Location) ? 
@@ -194,6 +204,8 @@ namespace Nancy.ViewEngines.Spark
             return ctx;
         }
 
+=======
+>>>>>>> Added NHaml, tests and demo project
         public class NancyViewFile : IViewFile
         {
             private readonly object updateLock = new object();

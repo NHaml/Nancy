@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>System.Web.NHaml</name>
+    </assembly>
+    <members>
+        <member name="M:System.Web.NHaml.TemplateResolution.FileTemplateContentProvider.AddPathSource(System.String)">
+            <remarks>The path is assumed to be relative to the AppDoamin BaseDirectory.</remarks>
+        </member>
+        <member name="T:System.Web.NHaml.TemplateResolution.ViewSource">
+            <summary>
+            Represents a view template source
+            </summary>
+        </member>
+    </members>
+</doc>

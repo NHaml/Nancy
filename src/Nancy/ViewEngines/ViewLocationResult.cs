@@ -104,6 +104,17 @@
             }
         }
 
+        /// <summary>
+        /// Combines the Location, Name and Extension properties into a single path component
+        /// </summary>
+        /// <returns>A safe file path to this <see cref="ViewLocationResult"/></returns>
+        public string GetSafeViewPath()
+        {
+            return string.IsNullOrEmpty(this.Location) ?
+                string.Concat(this.Name, ".", this.Extension) :
+                string.Concat(this.Location, "/", this.Name, ".", this.Extension);
+        }
+
         public static bool operator ==(ViewLocationResult left, ViewLocationResult right)
         {
             return Equals(left, right);
