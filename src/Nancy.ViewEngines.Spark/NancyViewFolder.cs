@@ -1,15 +1,10 @@
 namespace Nancy.ViewEngines.Spark
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Text;
-    using System.Threading;
-
-    using Nancy.Responses.Negotiation;
-
     using global::Spark.FileSystem;
 
     /// <summary>
@@ -19,12 +14,6 @@ namespace Nancy.ViewEngines.Spark
     {
         private readonly ViewEngineStartupContext viewEngineStartupContext;
 
-        private List<ViewLocationResult> currentlyLocatedViews;
-
-        private ReaderWriterLockSlim padlock = new ReaderWriterLockSlim();
-
-        private readonly ConcurrentDictionary<string, IViewFile> cachedFiles = new ConcurrentDictionary<string, IViewFile>();
-
         /// <summary>
         /// Initializes a new instance of the <see cref="NancyViewFolder"/> class, using the provided
         /// <see cref="viewEngineStartupContext"/> instance.
@@ -33,10 +22,6 @@ namespace Nancy.ViewEngines.Spark
         public NancyViewFolder(ViewEngineStartupContext viewEngineStartupContext)
         {
             this.viewEngineStartupContext = viewEngineStartupContext;
-
-            // No need to lock here
-            this.currentlyLocatedViews =
-                new List<ViewLocationResult>(viewEngineStartupContext.ViewLocator.GetAllCurrentlyDiscoveredViews());
         }
 
         /// <summary>
@@ -48,55 +33,15 @@ namespace Nancy.ViewEngines.Spark
         {
             var searchPath = ConvertPath(path);
 
-<<<<<<< HEAD
-            IViewFile fileResult;
-            if (this.cachedFiles.TryGetValue(searchPath, out fileResult))
-            {
-                return fileResult;
-            }
-
-            ViewLocationResult result = null;
-
-            this.padlock.EnterUpgradeableReadLock();
-            try
-            {
-                result = this.currentlyLocatedViews
-                             .FirstOrDefault(v => CompareViewPaths(GetSafeViewPath(v), searchPath));
-=======
             var viewLocationResult = this.viewEngineStartupContext.ViewLocationResults
                 .FirstOrDefault(v => CompareViewPaths(v.GetSafeViewPath(), searchPath));
->>>>>>> Added NHaml, tests and demo project
 
-                if (result == null && StaticConfiguration.Caching.EnableRuntimeViewDiscovery)
-                {
-                    result = this.viewEngineStartupContext.ViewLocator.LocateView(searchPath, GetFakeContext());
-
-                    this.padlock.EnterWriteLock();
-                    try
-                    {
-                        this.currentlyLocatedViews.Add(result);
-                    }
-                    finally
-                    {
-                        this.padlock.ExitWriteLock();
-                    }
-                }
-            }
-            finally
-            {
-                this.padlock.ExitUpgradeableReadLock();
-            }
-
-
-            if (result == null)
+            if (viewLocationResult == null)
             {
                 throw new FileNotFoundException(string.Format("Template {0} not found", path), path);
             }
 
-            fileResult = new NancyViewFile(result);
-            this.cachedFiles.AddOrUpdate(searchPath, s => fileResult, (s, o) => fileResult);
-
-            return fileResult;
+            return new NancyViewFile(viewLocationResult);
         }
 
         /// <summary>
@@ -106,23 +51,14 @@ namespace Nancy.ViewEngines.Spark
         /// <returns>An <see cref="IEnumerable{T}"/> that contains the matched views.</returns>
         public IList<string> ListViews(string path)
         {
-            this.padlock.EnterReadLock();
-
-            try
-            {
-                return currentlyLocatedViews.
-                    Where(v => v.Location.StartsWith(path, StringComparison.OrdinalIgnoreCase)).
-                    Select(v =>
-                        v.Location.Length == path.Length ?
-                            v.Name + "." + v.Extension :
-                            v.Location.Substring(path.Length) + "/" + v.Name + "." + v.Extension).
-                    ToList();
-
-            }
-            finally
-            {
-                this.padlock.ExitReadLock();                
-            }
+            return this.viewEngineStartupContext.
+                ViewLocationResults.
+                Where(v => v.Location.StartsWith(path, StringComparison.OrdinalIgnoreCase)).
+                Select(v =>
+                    v.Location.Length == path.Length ?
+                        v.Name + "." + v.Extension : 
+                        v.Location.Substring(path.Length) + "/" + v.Name + "." + v.Extension).
+                ToList();
         }
 
         /// <summary>
@@ -132,46 +68,10 @@ namespace Nancy.ViewEngines.Spark
         /// <returns><see langword="true"/> if the view exists in the view folder; otherwise <see langword="false"/>.</returns>
         public bool HasView(string path)
         {
-            var searchPath =
+            var searchPath = 
                 ConvertPath(path);
 
-<<<<<<< HEAD
-            this.padlock.EnterUpgradeableReadLock();
-            try
-            {
-                var hasCached = this.currentlyLocatedViews.Any(v => CompareViewPaths(GetSafeViewPath(v), searchPath));
-
-                if (hasCached || !StaticConfiguration.Caching.EnableRuntimeViewDiscovery)
-                {
-                    return hasCached;
-                }
-
-                var newView = this.viewEngineStartupContext.ViewLocator.LocateView(searchPath, GetFakeContext());
-
-                if (newView == null)
-                {
-                    return false;
-                }
-
-                this.padlock.EnterWriteLock();
-                try
-                {
-                    this.currentlyLocatedViews.Add(newView);
-
-                    return true;
-                }
-                finally
-                {
-                    this.padlock.ExitWriteLock();
-                }
-            }
-            finally
-            {
-                this.padlock.ExitUpgradeableReadLock();
-            }
-=======
             return this.viewEngineStartupContext.ViewLocationResults.Any(v => CompareViewPaths(v.GetSafeViewPath(), searchPath));
->>>>>>> Added NHaml, tests and demo project
         }
 
         private static bool CompareViewPaths(string storedViewPath, string requestedViewPath)
@@ -184,79 +84,31 @@ namespace Nancy.ViewEngines.Spark
             return path.Replace(@"\", "/");
         }
 
-<<<<<<< HEAD
-        private static string GetSafeViewPath(ViewLocationResult result)
-        {
-            return string.IsNullOrEmpty(result.Location) ? 
-                string.Concat(result.Name, ".", result.Extension) : 
-                string.Concat(result.Location, "/", result.Name, ".", result.Extension);
-        }
-
-        // Horrible hack, but we have no way to get a context
-        private static NancyContext GetFakeContext()
-        {
-            var ctx = new NancyContext();
-
-            ctx.Request = new Request("GET", "/", "http");
-
-            ctx.NegotiationContext = new NegotiationContext();
-
-            return ctx;
-        }
-
-=======
->>>>>>> Added NHaml, tests and demo project
         public class NancyViewFile : IViewFile
         {
-            private readonly object updateLock = new object();
-
             private readonly ViewLocationResult viewLocationResult;
-
-            private string contents;
-
-            private long lastUpdated;
+            private readonly long created;
 
             public NancyViewFile(ViewLocationResult viewLocationResult)
             {
                 this.viewLocationResult = viewLocationResult;
-
-                this.UpdateContents();
+                this.created = DateTime.Now.Ticks;
             }
 
             public long LastModified
             {
-                get
-                {
-                    if (StaticConfiguration.Caching.EnableRuntimeViewUpdates && this.viewLocationResult.IsStale())
-                    {
-                        this.UpdateContents();
-                    }
-
-                    return this.lastUpdated;
-                }
+                get { return StaticConfiguration.DisableCaches ? DateTime.Now.Ticks : this.created; }
             }
 
             public Stream OpenViewStream()
             {
-                if (StaticConfiguration.Caching.EnableRuntimeViewUpdates && this.viewLocationResult.IsStale())
+                string view;
+                using (var reader = this.viewLocationResult.Contents.Invoke())
                 {
-                    this.UpdateContents();
+                    view = reader.ReadToEnd();
                 }
 
-                return new MemoryStream(Encoding.UTF8.GetBytes(this.contents));
-            }
-
-            private void UpdateContents()
-            {
-                lock (this.updateLock)
-                {
-                    using (var reader = this.viewLocationResult.Contents.Invoke())
-                    {
-                        this.contents = reader.ReadToEnd();
-                    }
-
-                    this.lastUpdated = DateTime.Now.Ticks;
-                }
+                return new MemoryStream(Encoding.UTF8.GetBytes(view));
             }
         }
     }
