@@ -4,6 +4,7 @@
     using System.Linq;
     using System.Web.NHaml.TemplateResolution;
     using System.IO;
+    using Nancy.Responses.Negotiation;
 
     public class NancyTemplateContentProvider : ITemplateContentProvider
     {
@@ -18,13 +19,21 @@
         {
             var searchPath = ConvertPath(templateName);
 
-            var viewLocationResult = this.viewEngineStartupContext.ViewLocationResults
-                .FirstOrDefault(v => CompareViewPaths(v.GetSafeViewPath(), searchPath));
+            var viewLocationResult = this.viewEngineStartupContext.ViewLocator.LocateView(templateName, GetFakeContext());
 
             if (viewLocationResult == null)
                 throw new FileNotFoundException(string.Format("Template {0} not found", templateName), templateName);
 
             return new NancyNHamlView(viewLocationResult);
+        }
+
+        // Horrible hack, but we have no way to get a context
+        private static NancyContext GetFakeContext()
+        {
+            var ctx = new NancyContext();
+            ctx.Request = new Request("GET", "/", "http");
+            ctx.NegotiationContext = new NegotiationContext();
+            return ctx;
         }
 
         private static string ConvertPath(string path)

@@ -16,8 +16,7 @@ namespace Nancy.Demo.NHamlViewEngine
                                var productList = new List<Product>
                                {
                                    new Product { Name = "Acme Snargler", Sku = "ACM0001"},
-                                   new Product { Name = "Spumko Fooferon", Sku = "SPM0002"},
-                                   new Product { Name = null, Sku = ""},
+                                   new Product { Name = "Spumko Fooferon", Sku = "SPM0002"}
                                };
 
                                return View["Index", productList];
